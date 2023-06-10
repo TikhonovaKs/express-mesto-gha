@@ -1,4 +1,6 @@
 const User = require("../models/user");
+const ERROR_CODE_INCORRECT_DATA = 400;
+const ERROR_CODE_NOT_FOUND = 404;
 
 const getUsers = (req, res) => {
   User.find({})
@@ -64,12 +66,16 @@ const updateUser = (req, res) => {
       new: true, // обработчик then получит на вход обновлённую запись
       runValidators: true, // данные будут валидированы перед изменением
       upsert: true, // если пользователь не найден, он будет создан
-    }
+    },
   )
     .then((user) => res.status(201).send(user))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(400).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
+          message: "Invalid data passed when updating profile",
+        });
+      } else if (err.name === "ValidationError") {
+        res.status(ERROR_CODE_NOT_FOUND).send({
           message: "Invalid data passed when updating profile",
         });
       } else {
@@ -90,7 +96,7 @@ const updateAvatar = (req, res) => {
       new: true,
       runValidators: true,
       upsert: true,
-    }
+    },
   )
     .then((user) => res.status(201).send(user))
     .catch((err) => {
