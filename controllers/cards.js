@@ -47,8 +47,8 @@ const deleteCardById = (req, res) => {
     .orFail(() => new Error("Not found"))
     .then((card) => res.status(200).send(card))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(404).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "User not found",
         });
       } else {
@@ -67,7 +67,7 @@ const likeCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       req.params.id,
       { $addToSet: { likes: req.user._id } },
-      { new: true }
+      { new: true },
     );
 
     if (!card) {
@@ -76,8 +76,14 @@ const likeCard = async (req, res) => {
         .json({ message: "Передан несуществующий _id карточки." });
     }
     res.status(200).json(card);
-  } catch (error) {
-    res.status(500).json({ message: "Внутренняя ошибка сервера" });
+  } catch (err) {
+    if (err.name === "ValidationError" || err.name === "CastError") {
+      res.status(ERROR_CODE_INCORRECT_DATA).send({
+        message: "Incorrect data passed during card creation"
+      });
+    } else {
+      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
   }
 };
 
@@ -86,7 +92,7 @@ const dislikeCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       req.params.id,
       { $pull: { likes: req.user._id } },
-      { new: true }
+      { new: true },
     );
     if (!card) {
       return res
@@ -94,8 +100,14 @@ const dislikeCard = async (req, res) => {
         .json({ message: "Передан несуществующий _id карточки." });
     }
     res.status(200).json(card);
-  } catch (error) {
-    res.status(500).json({ message: "Внутренняя ошибка сервера" });
+  } catch (err) {
+    if (err.name === "ValidationError" || err.name === "CastError") {
+      res.status(ERROR_CODE_INCORRECT_DATA).send({
+        message: "Incorrect data passed during card creation"
+      });
+    } else {
+      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+    }
   }
 };
 
