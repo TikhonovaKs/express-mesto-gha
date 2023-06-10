@@ -5,8 +5,8 @@ const getCards = (req, res) => {
   Card.find({})
     .then((card) => res.status(200).send(card))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(400).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "Incorrect data passed during card creation",
         });
       } else {
@@ -26,10 +26,10 @@ const createCard = (req, res) => {
   })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
-      if (err.message.includes("validation failed")) {
-        res
-          .status(400)
-          .send({ message: "Incorrect data passed during card creation" });
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
+          message: "Incorrect data passed during card creation"
+        });
       } else {
         res.status(500).send({
           message: "Internal Server Error",

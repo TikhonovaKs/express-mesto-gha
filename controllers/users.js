@@ -6,8 +6,8 @@ const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(400).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "Incorrect data passed during user creation",
         });
       } else {
@@ -43,8 +43,8 @@ const createUser = (req, res) => {
   User.create(req.body)
     .then((user) => res.status(201).send(user))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(400).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "Incorrect data passed during user creation",
         });
       } else {
@@ -100,8 +100,8 @@ const updateAvatar = (req, res) => {
   )
     .then((user) => res.status(201).send(user))
     .catch((err) => {
-      if (err.message === "Not found") {
-        res.status(400).send({
+      if (err.name === "ValidationError" || err.name === "CastError") {
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "Invalid data passed when updating avatar",
         });
       } else {
