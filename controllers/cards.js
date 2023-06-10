@@ -2,6 +2,7 @@
 const Card = require("../models/card");
 
 const ERROR_CODE_INCORRECT_DATA = 400;
+const ERROR_CODE_NOT_FOUND = 404;
 
 const getCards = (req, res) => {
   Card.find({})
@@ -44,12 +45,12 @@ const createCard = (req, res) => {
 
 const deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.id)
-    .orFail(() => new Error("Not found"))
+    // .orFail(() => new Error("Not found"))
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "User not found",
+        res.status(ERROR_CODE_NOT_FOUND).send({
+          message: "Card not found",
         });
       } else {
         res.status(500).send({

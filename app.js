@@ -23,7 +23,9 @@ app.use((req, res, next) => {
 
 // регистрирует маршруты, определенные в router, в приложении Express
 app.use(router);
-
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 app.listen(3000, () => {
   console.log("I am listening port 3000");
 });
