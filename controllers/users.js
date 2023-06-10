@@ -22,7 +22,9 @@ const getUsers = (req, res) => {
 
 const getUserById = (req, res) => {
   User.findById(req.params.id)
-    .orFail(() => new Error("Not found"))
+    .orFail(() => res.status(ERROR_CODE_NOT_FOUND).send({
+      message: 'User not found',
+    }))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.name === "ValidationError" || err.name === "CastError") {

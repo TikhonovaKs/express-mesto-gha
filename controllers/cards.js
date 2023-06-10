@@ -45,11 +45,13 @@ const createCard = (req, res) => {
 
 const deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.id)
-    // .orFail(() => new Error("Not found"))
+    .orFail(() => res.status(ERROR_CODE_NOT_FOUND).send({
+      message: "Card not found",
+    }))
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_NOT_FOUND).send({
+        res.status(ERROR_CODE_INCORRECT_DATA).send({
           message: "Card not found",
         });
       } else {
