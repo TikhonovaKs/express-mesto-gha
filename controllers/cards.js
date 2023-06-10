@@ -1,6 +1,8 @@
 // подключение модели пользователя, определенной в файле ../models/card
 const Card = require("../models/card");
 
+const ERROR_CODE_INCORRECT_DATA = 400;
+
 const getCards = (req, res) => {
   Card.find({})
     .then((card) => res.status(200).send(card))
