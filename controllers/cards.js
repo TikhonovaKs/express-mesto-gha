@@ -1,23 +1,18 @@
-// подключение модели пользователя, определенной в файле ../models/card
-const Card = require("../models/card");
+const http2 = require('http2');
+const Card = require('../models/card');
 
-const ERROR_CODE_INCORRECT_DATA = 400;
-const ERROR_CODE_NOT_FOUND = 404;
+const BAD_REQUEST_ERROR = http2.constants.HTTP_STATUS_BAD_REQUEST; // 400
+const NOT_FOUND_ERROR = http2.constants.HTTP_STATUS_NOT_FOUND; // 404
+const DEFAULT_ERROR = http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR; // 500
 
 const getCards = (req, res) => {
   Card.find({})
     .then((card) => res.status(200).send(card))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Incorrect data passed during card creation",
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during card creation" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
@@ -29,37 +24,23 @@ const createCard = (req, res) => {
   })
     .then((card) => res.status(201).send(card))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Incorrect data passed during card creation"
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during card creation" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
 
 const deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.id)
-    .orFail(() => res.status(ERROR_CODE_NOT_FOUND).send({
-      message: "Card not found",
-    }))
+    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "Card not found" }))
     .then((card) => res.status(200).send(card))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Card not found",
-        });
+      if (err.name === "CastError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Card not found" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
@@ -75,17 +56,15 @@ const likeCard = async (req, res) => {
 
     if (!card) {
       return res
-        .status(404)
-        .json({ message: "Передан несуществующий _id карточки." });
+        .status(NOT_FOUND_ERROR)
+        .json({ message: "Invalid card ID passed" });
     }
     res.status(200).json(card);
   } catch (err) {
-    if (err.name === "ValidationError" || err.name === "CastError") {
-      res.status(ERROR_CODE_INCORRECT_DATA).send({
-        message: "Incorrect data passed during card creation"
-      });
+    if (err.name === "CastError") {
+      res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data was sent to set like" });
     } else {
-      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+      res.status(DEFAULT_ERROR).send({ message: err.message });
     }
   }
 };
@@ -99,17 +78,15 @@ const dislikeCard = async (req, res) => {
     );
     if (!card) {
       return res
-        .status(404)
-        .json({ message: "Передан несуществующий _id карточки." });
+        .status(NOT_FOUND_ERROR)
+        .json({ message: "Invalid card ID passed" });
     }
     res.status(200).json(card);
   } catch (err) {
-    if (err.name === "ValidationError" || err.name === "CastError") {
-      res.status(ERROR_CODE_INCORRECT_DATA).send({
-        message: "Incorrect data passed during card creation"
-      });
+    if (err.name === "CastError") {
+      res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data was sent to unlike" });
     } else {
-      res.status(500).json({ message: "Внутренняя ошибка сервера" });
+      res.status(DEFAULT_ERROR).send({ message: err.message });
     }
   }
 };

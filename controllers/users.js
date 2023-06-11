@@ -1,42 +1,31 @@
+const http2 = require('http2');
 const User = require("../models/user");
-const ERROR_CODE_INCORRECT_DATA = 400;
-const ERROR_CODE_NOT_FOUND = 404;
+
+const BAD_REQUEST_ERROR = http2.constants.HTTP_STATUS_BAD_REQUEST; // 400
+const NOT_FOUND_ERROR = http2.constants.HTTP_STATUS_NOT_FOUND; // 404
+const DEFAULT_ERROR = http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR; // 500
 
 const getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).send(users))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Incorrect data passed during user creation",
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user creation" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
 
 const getUserById = (req, res) => {
   User.findById(req.params.id)
-    .orFail(() => res.status(ERROR_CODE_NOT_FOUND).send({
-      message: 'User not found',
-    }))
+    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "User not found",
-        });
+      if (err.name === "CastError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "User not found" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
@@ -45,16 +34,10 @@ const createUser = (req, res) => {
   User.create(req.body)
     .then((user) => res.status(201).send(user))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Incorrect data passed during user creation",
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user creation" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
@@ -67,25 +50,15 @@ const updateUser = (req, res) => {
     {
       new: true, // обработчик then получит на вход обновлённую запись
       runValidators: true, // данные будут валидированы перед изменением
-      upsert: true, // если пользователь не найден, он будет создан
     },
   )
+    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Invalid data passed when updating profile",
-        });
-      } else if (err.name === "ValidationError") {
-        res.status(ERROR_CODE_NOT_FOUND).send({
-          message: "Invalid data passed when updating profile",
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user updating" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
@@ -100,18 +73,13 @@ const updateAvatar = (req, res) => {
       upsert: true,
     },
   )
+    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.name === "ValidationError" || err.name === "CastError") {
-        res.status(ERROR_CODE_INCORRECT_DATA).send({
-          message: "Invalid data passed when updating avatar",
-        });
+      if (err.name === "ValidationError") {
+        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user updating" });
       } else {
-        res.status(500).send({
-          message: "Internal Server Error",
-          err: err.message,
-          stack: err.stack,
-        });
+        res.status(DEFAULT_ERROR).send({ message: err.message });
       }
     });
 };
