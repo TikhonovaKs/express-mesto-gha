@@ -59,7 +59,6 @@ const updateUser = (req, res) => {
       runValidators: true, // данные будут валидированы перед изменением
     },
   )
-    // .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: 'User not found' }))
     .then((user) => {
       if (user) {
         res.status(HTTP_STATUS_OK).send(user);
@@ -87,7 +86,6 @@ const updateAvatar = (req, res) => {
       upsert: true,
     },
   )
-    // .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: 'User not found' }))
     .then((user) => {
       if (user) {
         res.status(HTTP_STATUS_OK).send(user);
