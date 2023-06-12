@@ -35,11 +35,16 @@ const createCard = (req, res) => {
 
 const deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.id)
-    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: 'Card not found' }))
-    .then((card) => res.status(HTTP_STATUS_OK).send(card))
+    .then((card) => {
+      if (card) {
+        res.status(HTTP_STATUS_OK).send(card);
+      } else {
+        res.status(NOT_FOUND_ERROR).send({ message: 'Card not found' });
+      }
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Card not found' });
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Wrong format' });
       } else {
         console.error(err.message);
         res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
@@ -63,7 +68,7 @@ const likeCard = async (req, res) => {
     } else res.status(HTTP_STATUS_OK).json(card);
   } catch (err) {
     if (err.name === 'CastError') {
-      res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data was sent to set like' });
+      res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid format' });
     } else {
       console.error(err.message);
       res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
@@ -85,7 +90,7 @@ const dislikeCard = async (req, res) => {
     } else res.status(HTTP_STATUS_OK).json(card);
   } catch (err) {
     if (err.name === 'CastError') {
-      res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data was sent to unlike' });
+      res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid format was sent to unlike' });
     } else {
       console.error(err.message);
       res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
