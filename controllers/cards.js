@@ -1,19 +1,19 @@
 const http2 = require('http2');
 const Card = require('../models/card');
 
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_CREATED = 201;
+
 const BAD_REQUEST_ERROR = http2.constants.HTTP_STATUS_BAD_REQUEST; // 400
 const NOT_FOUND_ERROR = http2.constants.HTTP_STATUS_NOT_FOUND; // 404
 const DEFAULT_ERROR = http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR; // 500
 
 const getCards = (req, res) => {
   Card.find({})
-    .then((card) => res.status(200).send(card))
+    .then((card) => res.status(HTTP_STATUS_OK).send(card))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during card creation" });
-      } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
-      }
+      console.error(err.message);
+      res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
     });
 };
 
@@ -22,25 +22,27 @@ const createCard = (req, res) => {
     ...req.body,
     owner: req.user._id,
   })
-    .then((card) => res.status(201).send(card))
+    .then((card) => res.status(HTTP_STATUS_CREATED).send(card))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during card creation" });
+      if (err.name === 'ValidationError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during card creation' });
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
 
 const deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.id)
-    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "Card not found" }))
-    .then((card) => res.status(200).send(card))
+    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: 'Card not found' }))
+    .then((card) => res.status(HTTP_STATUS_OK).send(card))
     .catch((err) => {
-      if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Card not found" });
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Card not found' });
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
@@ -55,16 +57,16 @@ const likeCard = async (req, res) => {
     );
 
     if (!card) {
-      return res
+      res
         .status(NOT_FOUND_ERROR)
-        .json({ message: "Invalid card ID passed" });
-    }
-    res.status(200).json(card);
+        .json({ message: 'Invalid card ID passed' });
+    } else res.status(HTTP_STATUS_OK).json(card);
   } catch (err) {
-    if (err.name === "CastError") {
-      res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data was sent to set like" });
+    if (err.name === 'CastError') {
+      res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data was sent to set like' });
     } else {
-      res.status(DEFAULT_ERROR).send({ message: err.message });
+      console.error(err.message);
+      res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
     }
   }
 };
@@ -77,16 +79,16 @@ const dislikeCard = async (req, res) => {
       { new: true },
     );
     if (!card) {
-      return res
+      res
         .status(NOT_FOUND_ERROR)
-        .json({ message: "Invalid card ID passed" });
-    }
-    res.status(200).json(card);
+        .json({ message: 'Invalid card ID passed' });
+    } else res.status(HTTP_STATUS_OK).json(card);
   } catch (err) {
-    if (err.name === "CastError") {
-      res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data was sent to unlike" });
+    if (err.name === 'CastError') {
+      res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data was sent to unlike' });
     } else {
-      res.status(DEFAULT_ERROR).send({ message: err.message });
+      console.error(err.message);
+      res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
     }
   }
 };
