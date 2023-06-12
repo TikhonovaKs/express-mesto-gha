@@ -1,11 +1,11 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const router = require("./routes");
+const express = require('express');
+const mongoose = require('mongoose');
+const router = require('./routes');
 
 const app = express();
 
 // подключаемся к серверу mongo
-mongoose.connect("mongodb://localhost:27017/mestodb", {
+mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
 });
 
@@ -15,7 +15,7 @@ app.use(express.json());
 // временное решение авторизации
 app.use((req, res, next) => {
   req.user = {
-    _id: "64832af204556254303a9e8e",
+    _id: '64832af204556254303a9e8e',
   };
 
   next();
@@ -27,5 +27,5 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 app.listen(3000, () => {
-  console.log("I am listening port 3000");
+  console.log('I am listening port 3000');
 });

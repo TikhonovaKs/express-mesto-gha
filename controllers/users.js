@@ -1,5 +1,8 @@
 const http2 = require('http2');
-const User = require("../models/user");
+const User = require('../models/user');
+
+const HTTP_STATUS_OK = 200;
+const HTTP_STATUS_CREATED = 201;
 
 const BAD_REQUEST_ERROR = http2.constants.HTTP_STATUS_BAD_REQUEST; // 400
 const NOT_FOUND_ERROR = http2.constants.HTTP_STATUS_NOT_FOUND; // 404
@@ -7,37 +10,41 @@ const DEFAULT_ERROR = http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR; // 500
 
 const getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.status(200).send(users))
+    .then((users) => res.status(HTTP_STATUS_OK).send(users))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user creation" });
-      } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
-      }
+      console.error(err.message);
+      res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
     });
 };
 
 const getUserById = (req, res) => {
   User.findById(req.params.id)
-    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === "CastError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "User not found" });
+    .then((user) => {
+      if (user) {
+        res.status(HTTP_STATUS_OK).send(user);
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect ID' });
+      } else {
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
 
 const createUser = (req, res) => {
   User.create(req.body)
-    .then((user) => res.status(201).send(user))
+    .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user creation" });
+      if (err.name === 'ValidationError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user creation' });
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
@@ -52,13 +59,19 @@ const updateUser = (req, res) => {
       runValidators: true, // данные будут валидированы перед изменением
     },
   )
-    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user updating" });
+    .then((user) => {
+      if (user) {
+        res.status(HTTP_STATUS_OK).send(user);
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user updating' });
+      } else {
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
@@ -73,13 +86,19 @@ const updateAvatar = (req, res) => {
       upsert: true,
     },
   )
-    .orFail(() => res.status(NOT_FOUND_ERROR).send({ message: "User not found" }))
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === "ValidationError") {
-        res.status(BAD_REQUEST_ERROR).send({ message: "Incorrect data passed during user updating" });
+    .then((user) => {
+      if (user) {
+        res.status(HTTP_STATUS_OK).send(user);
       } else {
-        res.status(DEFAULT_ERROR).send({ message: err.message });
+        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user updating' });
+      } else {
+        console.error(err.message);
+        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
       }
     });
 };
