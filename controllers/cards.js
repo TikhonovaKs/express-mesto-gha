@@ -58,7 +58,7 @@ const likeCard = async (req, res, next) => {
     const card = await Card.findByIdAndUpdate(
       req.params.id,
       { $addToSet: { likes: req.user._id } },
-      { new: true }
+      { new: true },
     );
 
     if (!card) {
@@ -79,7 +79,7 @@ const dislikeCard = async (req, res, next) => {
     const card = await Card.findByIdAndUpdate(
       req.params.id,
       { $pull: { likes: req.user._id } },
-      { new: true }
+      { new: true },
     );
     if (!card) {
       throw new NotFoundError('Invalid card ID passed');
