@@ -1,8 +1,8 @@
-const Card = require("../models/card");
+const Card = require('../models/card');
 
-const BadRequestError = require("../errors/bad-request-err");
-const ForbiddenError = require("../errors/forbidden-err");
-const NotFoundError = require("../errors/not-found-err");
+const BadRequestError = require('../errors/bad-request-err');
+const ForbiddenError = require('../errors/forbidden-err');
+const NotFoundError = require('../errors/not-found-err');
 
 const getCards = (req, res, next) => {
   Card.find({})
@@ -17,8 +17,8 @@ const createCard = (req, res, next) => {
   })
     .then((card) => res.send({ card }))
     .catch((err) => {
-      if (err.name === "ValidationError") {
-        next(new BadRequestError("Incorrect data passed during card updating"));
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Incorrect data passed during card updating'));
       } else {
         next(err);
       }
@@ -29,12 +29,12 @@ const deleteCardById = (req, res, next) => {
   Card.findById(req.params.id)
     .then((card) => {
       if (!card) {
-        throw new NotFoundError("Card not found");
+        throw new NotFoundError('Card not found');
       }
 
       // Проверяем, принадлежит ли карточка текущему пользователю
       if (card.owner.toString() !== req.user._id) {
-        throw new ForbiddenError("You are not allowed to delete this card");
+        throw new ForbiddenError('You are not allowed to delete this card');
       }
 
       // Если все проверки пройдены успешно, удаляем карточку
@@ -44,8 +44,8 @@ const deleteCardById = (req, res, next) => {
       res.send({ card: deletedCard });
     })
     .catch((err) => {
-      if (err.name === "CastError") {
-        next(new BadRequestError("Wrong format"));
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Wrong format'));
       } else {
         next(err);
       }
@@ -62,16 +62,12 @@ const likeCard = async (req, res, next) => {
     );
 
     if (!card) {
-      throw new NotFoundError("Invalid card ID passed");
-      // res
-      //   .status(NOT_FOUND_ERROR)
-      //   .json({ message: 'Invalid card ID passed' });
+      throw new NotFoundError('Invalid card ID passed');
     }
     res.send({ card });
-    // else res.status(HTTP_STATUS_OK).json(card);
   } catch (err) {
-    if (err.name === "CastError") {
-      next(new BadRequestError("Invalid format"));
+    if (err.name === 'CastError') {
+      next(new BadRequestError('Invalid format'));
     } else {
       next(err);
     }
@@ -86,12 +82,12 @@ const dislikeCard = async (req, res, next) => {
       { new: true }
     );
     if (!card) {
-      throw new NotFoundError("Invalid card ID passed");
+      throw new NotFoundError('Invalid card ID passed');
     }
     res.send({ card });
   } catch (err) {
-    if (err.name === "CastError") {
-      next(new BadRequestError("Invalid format"));
+    if (err.name === 'CastError') {
+      next(new BadRequestError('Invalid format'));
     } else {
       next(err);
     }
