@@ -1,55 +1,109 @@
-const http2 = require('http2');
+// хеширование паролей и сравнение хэшей паролей с их исходными значениями:
+const bcrypt = require('bcryptjs');
+const jsonWebToken = require('jsonwebtoken');
 const User = require('../models/user');
 
-const HTTP_STATUS_OK = 200;
-const HTTP_STATUS_CREATED = 201;
+const BadRequestError = require('../errors/bad-request-err');
+const ConflictError = require('../errors/conflict-err');
+// const ForbiddenError = require('../errors/forbidden-err');
+const NotFoundError = require('../errors/not-found-err');
+const UnauthorizedError = require('../errors/unauthorized-err');
 
-const BAD_REQUEST_ERROR = http2.constants.HTTP_STATUS_BAD_REQUEST; // 400
-const NOT_FOUND_ERROR = http2.constants.HTTP_STATUS_NOT_FOUND; // 404
-const DEFAULT_ERROR = http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR; // 500
-
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.status(HTTP_STATUS_OK).send(users))
-    .catch((err) => {
-      console.error(err.message);
-      res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
-    });
+    .then((users) => res.send({ users }))
+    .catch(next);
 };
 
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   User.findById(req.params.id)
     .then((user) => {
-      if (user) {
-        res.status(HTTP_STATUS_OK).send(user);
-      } else {
-        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
-      }
+      if (user) return res.send({ user });
+
+      throw new NotFoundError('User with this Id not found');
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect ID' });
+        next(new BadRequestError('Incorrect ID'));
       } else {
-        console.error(err.message);
-        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
+        next(err);
       }
     });
 };
 
-const createUser = (req, res) => {
-  User.create(req.body)
-    .then((user) => res.status(HTTP_STATUS_CREATED).send(user))
+function getUserInfo(req, res, next) {
+  const { userId } = req.user;
+
+  User
+    .findById(userId)
+    .then((user) => {
+      if (user) return res.send({ user });
+
+      throw new NotFoundError('User with this Id not found');
+    })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user creation' });
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Incorrect ID'));
       } else {
-        console.error(err.message);
-        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
+        next(err);
+      }
+    });
+}
+
+const createUser = (req, res, next) => {
+  bcrypt.hash(String(req.body.password), 10)
+    .then((hashedPassword) => {
+      User.create({ ...req.body, password: hashedPassword })
+        .then((user) => {
+          res.send({ data: user });
+        });
+    })
+    .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictError('User with this email adress is already registered'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequestError('Incorrect data passed during user updating'));
+      } else {
+        next(err);
       }
     });
 };
 
-const updateUser = (req, res) => {
+const login = (req, res, next) => {
+  // вытащить email, password
+  const { email, password } = req.body;
+
+  // проверить существует ли пользователь с таким email
+  User.findOne({ email })
+    .select('+password')
+    .orFail(() => new Error('Пользователь не найден'))
+    .then((user) => {
+      // проверить совпаадет ли password
+      bcrypt.compare(String(password), user.password)
+        .then((isValidUser) => {
+          if (isValidUser) {
+            // создать JWT сроком на неделю (maxAge: 36000)
+            const jwt = jsonWebToken.sign({
+              _id: user._id,
+            }, 'SECRET');
+            // прикрепить его к куке
+            res.cookie('jwt', jwt, {
+              maxAge: 36000,
+              httpOnly: true,
+              sameSite: true, // на др. браузеры не будет уходить кука
+            });
+            // если совпадает вернутьпользователя
+            res.send({ data: user.toJSON() });
+          } else {
+            // если не совпадает вернуть ошибку
+            throw new UnauthorizedError('Incorrect password or email');
+          }
+        });
+    })
+    .catch(next);
+};
+
+const updateUser = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { name: req.body.name, about: req.body.about },
@@ -60,23 +114,20 @@ const updateUser = (req, res) => {
     },
   )
     .then((user) => {
-      if (user) {
-        res.status(HTTP_STATUS_OK).send(user);
-      } else {
-        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
-      }
+      if (user) return res.send({ user });
+
+      throw new NotFoundError('User with this Id not found');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user updating' });
+        next(new BadRequestError('Incorrect data passed during user updating'));
       } else {
-        console.error(err.message);
-        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
+        next(err);
       }
     });
 };
 
-const updateAvatar = (req, res) => {
+const updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { avatar: req.body.avatar },
@@ -87,18 +138,15 @@ const updateAvatar = (req, res) => {
     },
   )
     .then((user) => {
-      if (user) {
-        res.status(HTTP_STATUS_OK).send(user);
-      } else {
-        res.status(NOT_FOUND_ERROR).send({ message: 'User not found' });
-      }
+      if (user) return res.send({ user });
+
+      throw new NotFoundError('User with this Id not found');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Incorrect data passed during user updating' });
+        next(new BadRequestError('Incorrect data passed during avatar updating'));
       } else {
-        console.error(err.message);
-        res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
+        next(err);
       }
     });
 };
@@ -106,7 +154,9 @@ const updateAvatar = (req, res) => {
 module.exports = {
   getUsers,
   getUserById,
+  getUserInfo,
   createUser,
+  login,
   updateUser,
   updateAvatar,
 };
