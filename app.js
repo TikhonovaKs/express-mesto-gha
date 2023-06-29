@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const { errors, celebrate, Joi } = require('celebrate');
 const { URL_REGULAR_EXPRESSION } = require('./utils/constData');
-
 const router = require('./routes');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
@@ -32,24 +31,13 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(8),
-    name: Joi.string().required().min(2).max(30),
-    about: Joi.string().required().min(2).max(30),
+    name: Joi.string().min(2).max(30).optional(),
+    about: Joi.string().min(2).max(30).optional(),
     avatar: Joi.string().pattern(URL_REGULAR_EXPRESSION),
   }),
 }), createUser);
 
 app.use(cookieParser());
-
-// // временное решение авторизации
-// app.use((req, res, next) => {
-//   req.user = {
-//     _id: '64832af204556254303a9e8e',
-//   };
-
-//   next();
-// });
-
-// регистрирует маршруты, определенные в router, в приложении Express
 
 app.use(auth);
 

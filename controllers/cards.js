@@ -1,10 +1,8 @@
 const Card = require('../models/card');
 
 const BadRequestError = require('../errors/bad-request-err');
-// const ConflictError = require('../errors/conflict-err');
 const ForbiddenError = require('../errors/forbidden-err');
 const NotFoundError = require('../errors/not-found-err');
-// const UnauthorizedError = require('../errors/unauthorized-err');
 
 const getCards = (req, res, next) => {
   Card.find({})
@@ -65,19 +63,13 @@ const likeCard = async (req, res, next) => {
 
     if (!card) {
       throw new NotFoundError('Invalid card ID passed');
-      // res
-      //   .status(NOT_FOUND_ERROR)
-      //   .json({ message: 'Invalid card ID passed' });
-    } res.send({ card });
-    // else res.status(HTTP_STATUS_OK).json(card);
+    }
+    res.send({ card });
   } catch (err) {
     if (err.name === 'CastError') {
       next(new BadRequestError('Invalid format'));
-      // res.status(BAD_REQUEST_ERROR).send({ message: 'Invalid format' });
     } else {
       next(err);
-      // console.error(err.message);
-      // res.status(DEFAULT_ERROR).send({ message: 'Something went wrong' });
     }
   }
 };
@@ -91,7 +83,8 @@ const dislikeCard = async (req, res, next) => {
     );
     if (!card) {
       throw new NotFoundError('Invalid card ID passed');
-    } res.send({ card });
+    }
+    res.send({ card });
   } catch (err) {
     if (err.name === 'CastError') {
       next(new BadRequestError('Invalid format'));
