@@ -56,16 +56,19 @@ const createUser = (req, res, next) => {
       User.create({ ...req.body, password: hashedPassword })
         .then((user) => {
           res.send({ data: user });
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            next(new ConflictError('User with this email adress is already registered'));
+          } else if (err.name === 'ValidationError') {
+            next(new BadRequestError('Incorrect data passed during user updating'));
+          } else {
+            next(err);
+          }
         });
     })
     .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError('User with this email adress is already registered'));
-      } else if (err.name === 'ValidationError') {
-        next(new BadRequestError('Incorrect data passed during user updating'));
-      } else {
-        next(err);
-      }
+      next(err);
     });
 };
 

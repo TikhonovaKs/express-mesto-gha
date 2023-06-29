@@ -2,7 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const { errors, celebrate, Joi } = require('celebrate');
-const { URL_REGULAR_EXPRESSION } = require('./utils/constData');
 
 const router = require('./routes');
 const { createUser, login } = require('./controllers/users');
@@ -32,9 +31,9 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().min(8),
-    name: Joi.string().required().min(2).max(30),
-    about: Joi.string().required().min(2).max(30),
-    avatar: Joi.string().pattern(URL_REGULAR_EXPRESSION),
+    name: Joi.string().min(2).max(30).optional(),
+    about: Joi.string().min(2).max(30).optional(),
+    avatar: Joi.string().optional(),
   }),
 }), createUser);
 
