@@ -61,5 +61,6 @@ app.use(errors()); // обработчик ошибок celebrate
 app.use(errorHandler); // централизованный обработчик
 
 app.listen(3000, () => {
+  // eslint-disable-next-line no-console
   console.log('I am listening port 3000');
 });

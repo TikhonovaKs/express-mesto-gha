@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
 
 // исключаем видимость пароля для пользователя (применим метод toJSON в контроллере
 // users.js для функции login):
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function toJSON() {
   const user = this.toObject();
   delete user.password;
 
