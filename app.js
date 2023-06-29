@@ -39,17 +39,6 @@ app.post('/signup', celebrate({
 
 app.use(cookieParser());
 
-// // временное решение авторизации
-// app.use((req, res, next) => {
-//   req.user = {
-//     _id: '64832af204556254303a9e8e',
-//   };
-
-//   next();
-// });
-
-// регистрирует маршруты, определенные в router, в приложении Express
-
 app.use(auth);
 
 app.use(router);
@@ -61,6 +50,5 @@ app.use(errors()); // обработчик ошибок celebrate
 app.use(errorHandler); // централизованный обработчик
 
 app.listen(3000, () => {
-  // eslint-disable-next-line no-console
   console.log('I am listening port 3000');
 });
