@@ -21,6 +21,7 @@ router.post('/', celebrate({
       .max(30),
     link: Joi
       .string()
+      .required()
       .pattern(URL_REGULAR_EXPRESSION),
   }),
 }), createCard);

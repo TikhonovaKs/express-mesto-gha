@@ -31,24 +31,16 @@ const getUserById = (req, res, next) => {
     });
 };
 
-function getUserInfo(req, res, next) {
-  const { userId } = req.user;
-
-  User
-    .findById(userId)
+const getUserInfo = (req, res, next) => {
+  User.findById(req.user._id)
     .then((user) => {
-      if (user) return res.send({ user });
-
-      throw new NotFoundError('User with this Id not found');
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Incorrect ID'));
-      } else {
-        next(err);
+      if (!user) {
+        throw new NotFoundError('User was not found');
       }
-    });
-}
+      res.status(200).send({ data: user });
+    })
+    .catch(next);
+};
 
 const createUser = (req, res, next) => {
   bcrypt.hash(String(req.body.password), 10)
@@ -103,7 +95,13 @@ const login = (req, res, next) => {
           }
         });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.message === 'Пользователь не найден') {
+        next(new UnauthorizedError('Incorrect password or email'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 const updateUser = (req, res, next) => {
