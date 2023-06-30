@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const isUrl = require('validator/lib/isURL');
 const User = require('./user');
 
 const cardSchema = new mongoose.Schema({
@@ -11,6 +12,10 @@ const cardSchema = new mongoose.Schema({
   link: {
     type: String,
     required: true,
+    validate: {
+      validator: (url) => isUrl(url),
+      message: 'Link format is not correct',
+    },
   },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
