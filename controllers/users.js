@@ -8,6 +8,57 @@ const ConflictError = require('../errors/conflict-err');
 const NotFoundError = require('../errors/not-found-err');
 const UnauthorizedError = require('../errors/unauthorized-err');
 
+const createUser = (req, res, next) => {
+  bcrypt.hash(String(req.body.password), 10)
+    .then((hashedPassword) => {
+      User.create({ ...req.body, password: hashedPassword })
+        .then((user) => {
+          res.send({ data: user });
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            next(new ConflictError('User with this email adress is already registered'));
+          } else if (err.name === 'ValidationError') {
+            next(new BadRequestError('Incorrect data passed during user updating'));
+          } else {
+            next(err);
+          }
+        });
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findOne({ email })
+    .select('+password')
+    .orFail(() => new Error('Пользователь не найден'))
+    .then((user) => bcrypt.compare(String(password), user.password)
+      .then((isValidUser) => {
+        if (isValidUser) {
+          const jwt = jsonWebToken.sign({ _id: user._id }, 'SECRET', { expiresIn: '1w' });
+          res.cookie('jwt', jwt, {
+            maxAge: 36000,
+            httpOnly: true,
+            sameSite: true,
+          });
+          res.send({ data: user.toJSON() });
+        } else {
+          throw new UnauthorizedError('Incorrect password or email');
+        }
+      }))
+    .catch((err) => {
+      if (err.message === 'Пользователь не найден') {
+        next(new UnauthorizedError('Incorrect password or email'));
+      } else {
+        next(err);
+      }
+    });
+};
+
 const getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ users }))
@@ -41,68 +92,6 @@ const getUserInfo = (req, res, next) => {
     .catch(next);
 };
 
-const createUser = (req, res, next) => {
-  bcrypt.hash(String(req.body.password), 10)
-    .then((hashedPassword) => {
-      User.create({ ...req.body, password: hashedPassword })
-        .then((user) => {
-          res.send({ data: user });
-        })
-        .catch((err) => {
-          if (err.code === 11000) {
-            next(new ConflictError('User with this email adress is already registered'));
-          } else if (err.name === 'ValidationError') {
-            next(new BadRequestError('Incorrect data passed during user updating'));
-          } else {
-            next(err);
-          }
-        });
-    })
-    .catch((err) => {
-      next(err);
-    });
-};
-
-const login = (req, res, next) => {
-  // вытащить email, password
-  const { email, password } = req.body;
-
-  // проверить существует ли пользователь с таким email
-  User.findOne({ email })
-    .select('+password')
-    .orFail(() => new Error('Пользователь не найден'))
-    .then((user) => {
-      // проверить совпаадет ли password
-      bcrypt.compare(String(password), user.password)
-        .then((isValidUser) => {
-          if (isValidUser) {
-            // создать JWT сроком на неделю (maxAge: 36000)
-            const jwt = jsonWebToken.sign({
-              _id: user._id,
-            }, 'SECRET');
-            // прикрепить его к куке
-            res.cookie('jwt', jwt, {
-              maxAge: 36000,
-              httpOnly: true,
-              sameSite: true, // на др. браузеры не будет уходить кука
-            });
-            // если совпадает вернутьпользователя
-            res.send({ data: user.toJSON() });
-          } else {
-            // если не совпадает вернуть ошибку
-            throw new UnauthorizedError('Incorrect password or email');
-          }
-        });
-    })
-    .catch((err) => {
-      if (err.message === 'Пользователь не найден') {
-        next(new UnauthorizedError('Incorrect password or email'));
-      } else {
-        next(err);
-      }
-    });
-};
-
 const updateUser = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
@@ -134,7 +123,7 @@ const updateAvatar = (req, res, next) => {
     {
       new: true,
       runValidators: true,
-      upsert: true,
+      // upsert: true,
     },
   )
     .then((user) => {

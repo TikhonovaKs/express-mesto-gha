@@ -1,14 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
-const { errors, celebrate, Joi } = require('celebrate');
-const { URL_REGULAR_EXPRESSION } = require('./utils/constData');
+const { errors } = require('celebrate');
 const router = require('./routes');
-const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const errorHandler = require('./middlewares/errorHandler');
 
 const NotFoundError = require('./errors/not-found-err');
+
+// импорт роутов signin и signup
+const singInRoutes = require('./routes/signin');
+const singUpRoutes = require('./routes/signup');
 
 const app = express();
 
@@ -20,25 +22,12 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 // устанавливает middleware для парсинга JSON-тела запросов
 app.use(express.json());
 
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-  }),
-}), login);
-
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().min(8),
-    name: Joi.string().min(2).max(30).optional(),
-    about: Joi.string().min(2).max(30).optional(),
-    avatar: Joi.string().pattern(URL_REGULAR_EXPRESSION),
-  }),
-}), createUser);
+app.use('/', singInRoutes);
+app.use('/', singUpRoutes);
 
 app.use(cookieParser());
 
+// защищаем авторизацией все роуты кроме singIn и singUp
 app.use(auth);
 
 app.use(router);
