@@ -3,8 +3,6 @@ const errorHandler = (err, req, res, next) => {
 
   res.status(statusCode).send({ message: statusCode === 500 ? 'An error has occurred' : message });
 
-  res.status(statusCode).send({ message });
-
   next();
 };
 
